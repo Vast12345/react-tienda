@@ -43,7 +43,6 @@ export default function CreateCompra() {
       .then((response) => response.json())
       .then((data) => {
         setClientes(data);
-        console.log(clientes);
       })
       .catch((error) => console.error("Error: ", error));
   }, []);
