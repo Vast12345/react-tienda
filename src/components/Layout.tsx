@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react';
+import React from 'react';
 
 import { Link } from 'react-router-dom';
 
@@ -9,19 +9,28 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 <div className="container">
                     <div className="navbar-brand">
                         <Link to="/" className="navbar-item has-text-weight-bold is-size-4">
-                            Cliente CRUD
+                            Tienda
                         </Link>
                     </div>
                     <div className="navbar-menu">
                         <div className='navbar-end'>
-                            <Link to="/create" className="navbar-item has-text-grey is-size-6">
-                                Create Cliente
+                            <Link to="/cliente" className="navbar-item has-text-grey is-size-6">
+                                Cliente
+                            </Link>
+                            <Link to="/categoria" className='navbar-item has-text-grey is-size-6'>
+                                Categoria
+                            </Link>
+                            <Link to="/producto" className='navbar-item has-text-grey is-size-6'>
+                                Producto
+                            </Link>
+                            <Link to={"/compra"} className='navbar-item has-text-grey is-size-6'>
+                                Compra
                             </Link>
                         </div>
                     </div>
                 </div>
             </nav >
-        <main className="container py-6">{children}</main>
+        <main className="container mt-2">{children}</main>
     </div >
   )
 }
