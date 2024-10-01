@@ -21,6 +21,7 @@ import FindAllCompra from "./pages/Compra/FindAllCompra.tsx";
 import SearchCompra from "./pages/Compra/SearchCompra.tsx";
 import DeleteCompra from "./pages/Compra/DeleteCompra.tsx";
 import UpdateCompra from "./pages/Compra/UpdateCompra.tsx";
+import CreateCompraProducto from "./pages/CompraProducto/CreateCompraProducto.tsx";
 
 function App() {
   return (
@@ -54,6 +55,7 @@ function App() {
             <Route path="search" element={<SearchCompra />} />
             <Route path="delete/:id" element={<DeleteCompra />} />
             <Route path="update/:id" element={<UpdateCompra />} />
+            <Route path="checkout/:id" element={<CreateCompraProducto />}/>
           </Route>
         </Routes>
       </Layout>

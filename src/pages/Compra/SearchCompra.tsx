@@ -76,8 +76,11 @@ export default function SearchCompra() {
                         <Link to={`/compra/update/${compra.id}`} className="text-blue-500 hover:underline mr-4">
                         Edit
                         </Link>
-                        <Link to={`/compra/delete/${compra.id}`} className="text-red-500 hover:underline">
+                        <Link to={`/compra/delete/${compra.id}`} className="text-red-500 hover:underline mr-4">
                         Delete
+                        </Link>
+                        <Link to={`/compra/checkout/${compra.id}`} className="text-red-500 hover:underline">
+                            Shop
                         </Link>
                     </div>
                     </>
