@@ -31,11 +31,9 @@ interface Categoria {
     estado: boolean;
 }
 
-interface CompraProducto {
-    idCompra: string;
-    idProducto: string;
+interface ProdCart {
+    prodId: string;
     cantidad: number;
-    estado: boolean;
 }
 
 export default function CreateCompraProducto() {
@@ -51,12 +49,13 @@ export default function CreateCompraProducto() {
     });
     const [catId, setCatId] = useState<string>();
     const [categorias, setCategorias] = useState<Categoria[]>([]);
-    const [prodId, setProdId] = useState<string>();
+    const [prodId, setProdId] = useState('');
     const [productos, setProductos] = useState<Producto[]>([]);
-    const [compraProducto, setComraProducto] = useState<CompraProducto>();
+    const [cantidad, setCantidad] = useState(1);
+    const [prodCartId, setProdCartId] = useState<string[]>([]);
+    const [productCart, setProductCart] = useState<ProdCart[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const clienteRef = useRef<HTMLSelectElement>(null);
     const categoriaRef = useRef<HTMLSelectElement>(null);
     const navigate = useNavigate();
 
@@ -86,14 +85,60 @@ export default function CreateCompraProducto() {
         }
 
         fecthData();
-    })
+    }, [])
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (compra) {
-            setCompra({ ...compra, [e.target.name]: e.target.value });
-            console.log(compra)
+    useEffect(() => {
+        console.log(productCart);
+    }, [productCart])
+
+    const addProdToCart = () => {
+        console.log("Current Product IDs in Cart:", prodCartId);
+        console.log("Selected Product ID:", prodId);
+    
+        if (prodId) {
+            // Check if the product is already in the cart
+            const existingProductIndex = productCart.findIndex(prod => prod.prodId === prodId);
+    
+            if (existingProductIndex >= 0) {
+                // If it exists, update the quantity
+                setProductCart(prev => {
+                    const updatedCart = [...prev];
+                    updatedCart[existingProductIndex].cantidad += cantidad; // Update the quantity
+                    return updatedCart;
+                });
+            } else {
+                // If it's a new product, add it to the cart
+                const newProduct: ProdCart = { prodId, cantidad };
+                setProductCart(prev => [...prev, newProduct]);
+            }
+    
+            // Update the product ID list if necessary
+            setProdCartId(prev => [...prev, prodId]);
+    
+            // Reset the selected product and quantity for user convenience
+            setProdId('');
+            setCantidad(1);
+        } else {
+            alert("Please select a product");
         }
-    };
+
+/*         console.log(prodCartId);
+        console.log(prodId);
+
+
+        if (prodId && !prodCartId.includes(prodId)) {
+            setProdCartId((prev) => [...prev, prodId]);
+        } else {
+            alert("Add a New product")
+            return
+        }
+
+        const newProduct: ProdCart = {prodId, cantidad};
+        console.log(newProduct);
+
+        setProductCart((prev) => [...prev, newProduct]);
+        console.log(productCart); */
+    }
 
     const handleCreate = () => {
         if (clienteRef.current) {
@@ -103,7 +148,6 @@ export default function CreateCompraProducto() {
                 cliente: { id: String(selectedCategoriaId) },
             }));
         }
-        console.log(compra);
         fetch("http://localhost:8080/api/compraproducto/create", {
             method: "POST",
             headers: {
@@ -126,6 +170,13 @@ export default function CreateCompraProducto() {
             })
             .catch((error) => console.error("Error: ", error));
     };
+
+    if (loading) {
+        return <div className="notification is-info">Loading... </div>
+    }
+    if (error) {
+        return <div className="notfication is-danger">Error: {JSON.stringify(error)}</div>
+    }
 
     return (
         <div>
@@ -175,7 +226,6 @@ export default function CreateCompraProducto() {
                                         setProdId(e.target.value);
                                     }
                                     }
-                                    ref={categoriaRef}
                                     required
                                 >
                                     <option value={""} disabled>
@@ -190,7 +240,7 @@ export default function CreateCompraProducto() {
                             </div>
                         </div>
                     </div>
-                    <div className="field">
+                    <div className="field mr-2">
                         <label htmlFor="cantidad" className="label">
                             Cantidad
                         </label>
@@ -199,13 +249,45 @@ export default function CreateCompraProducto() {
                             type="number"
                             id="cantidad"
                             name="cantidad"
-                            value={compraProducto?.cantidad}
-                            onChange={handleChange}
+                            value={cantidad}
+                            onChange={(e) => {setCantidad(Number(e.target.value))}}
+                            min={1}
                             className="input"
                             required
                         />
                         </div>
                     </div>
+                    <div className="field">
+                        <button className="button" onClick={addProdToCart}>Add</button>
+                    </div>
+                </div>
+                <div className="box is-align-items-center">
+                    <table className="table">
+                        <thead>
+                            <tr>
+                                <th>Id</th>
+                                <th>Nombre</th>
+                                <th>Cantidad</th>
+                                <th>SubTotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {productCart.map((productEntry) => {
+                            const product = productos.find((prod) => prod.id === productEntry.prodId);
+                            const cantidad = productEntry.cantidad;
+                            const subtotal = product ? cantidad * parseFloat(product.precioventa) : 0; // Calculate subtotal
+
+                            return product ? (
+                                <tr key={product.id}>
+                                    <td>{product.id}</td>
+                                    <td>{product.nombre}</td>
+                                    <td>{cantidad}</td>
+                                    <td>{subtotal.toFixed(2)}</td> {/* Format subtotal to 2 decimal places */}
+                                </tr>
+                            ) : null;
+                        })}
+                        </tbody>
+                    </table>
                 </div>
                 <button onClick={() => navigate(-1)} className="button is-danger mr-2">
                     Back
