@@ -2,17 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from 'axios';
 
-interface Compra {
-    id: string;
-    fecha: string;
-    mediopago: string;
-    comentario: string;
-    estado: boolean;
-    cliente: {
-        id: string;
-    };
-}
-
 interface Producto {
     id: string;
     nombre: string;
@@ -36,14 +25,8 @@ interface ProdCart {
     cantidad: number;
 }
 
-interface CompraProducto {
-    id: string;
-    cantidad: number;
-    subtotal: number;
-}
-
 export default function CreateCompraProducto() {
-    const {compraId} = useParams();
+    const { compraId } = useParams();
     const [catId, setCatId] = useState<string>();
     const [categorias, setCategorias] = useState<Categoria[]>([]);
     const [prodId, setProdId] = useState('');
@@ -51,6 +34,7 @@ export default function CreateCompraProducto() {
     const [filteredProdcutos, setFilteredProductos] = useState<Producto[]>([]);
     const [productCart, setProductCart] = useState<ProdCart[]>([]);
     const [loading, setLoading] = useState(true);
+    const [success, setSuccess] = useState<string | null>(null);
     const [error, setError] = useState(null);
     const categoriaRef = useRef<HTMLSelectElement>(null);
     const cantidadRef = useRef<HTMLInputElement>(null);
@@ -119,17 +103,12 @@ export default function CreateCompraProducto() {
                 return Number(prod.id) === Number(productEntry.prodId);
             });
             const subtotal = product ? productEntry.cantidad * parseFloat(product.precioventa) : 0;
+            console.log("Compra ID: ", Number(compraId), " Product Id: ", Number(productEntry.prodId), " Cantidad: ", productEntry.cantidad, " Total: ", subtotal);
             try {
-                const response = await axios.post('http://localhost:8080/compraproducto/create', {
+                const response = await axios.post('http://localhost:8080/api/compraproducto/create', {
                     id: {
                         idcompra: Number(compraId),
-                        idproduct: Number(productEntry.prodId)
-                    },
-                    compra: {
-                        id: Number(compraId)
-                    },
-                    producto: {
-                        id: Number(productEntry.prodId)
+                        idproducto: Number(productEntry.prodId)
                     },
                     cantidad: productEntry.cantidad,
                     total: subtotal,
@@ -141,6 +120,10 @@ export default function CreateCompraProducto() {
             }
         })
         setLoading(false);
+        setTimeout(() => {
+            navigate("/compra/list");
+          }, 2000);
+        setSuccess("Success");
     };
 
     if (loading) {
@@ -268,6 +251,7 @@ export default function CreateCompraProducto() {
                     Create
                 </button>
             </div>
+            {success && <div className="notification is-success mt-5">{success}</div>}
         </div>
     );
 }

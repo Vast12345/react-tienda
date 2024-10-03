@@ -55,7 +55,7 @@ function App() {
             <Route path="search" element={<SearchCompra />} />
             <Route path="delete/:id" element={<DeleteCompra />} />
             <Route path="update/:id" element={<UpdateCompra />} />
-            <Route path=":id/checkout" element={<CreateCompraProducto />}/>
+            <Route path=":compraId/checkout" element={<CreateCompraProducto />}/>
           </Route>
         </Routes>
       </Layout>
