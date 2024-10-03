@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import axios from 'axios';
 
 interface Compra {
@@ -36,7 +36,14 @@ interface ProdCart {
     cantidad: number;
 }
 
+interface CompraProducto {
+    id: string;
+    cantidad: number;
+    subtotal: number;
+}
+
 export default function CreateCompraProducto() {
+    const {compraId} = useParams();
     const [compra, setCompra] = useState<Compra>({
         id: "",
         fecha: "",
@@ -51,13 +58,15 @@ export default function CreateCompraProducto() {
     const [categorias, setCategorias] = useState<Categoria[]>([]);
     const [prodId, setProdId] = useState('');
     const [productos, setProductos] = useState<Producto[]>([]);
-    const [cantidad, setCantidad] = useState(1);
-    const [prodCartId, setProdCartId] = useState<string[]>([]);
+    const [filteredProdcutos, setFilteredProductos] = useState<Producto[]>([]);
     const [productCart, setProductCart] = useState<ProdCart[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const categoriaRef = useRef<HTMLSelectElement>(null);
+    const cantidadRef = useRef<HTMLInputElement>(null);
     const navigate = useNavigate();
+
+    const [compraProduct, setCompraProduct] = useState<CompraProducto>();
 
     useEffect(() => {
         const fetchCategoria = async () => {
@@ -68,7 +77,6 @@ export default function CreateCompraProducto() {
                 setError(err)
             }
         }
-
         const fetchProducto = async () => {
             try {
                 const response = await axios.get("http://localhost:8080/api/producto/list");
@@ -88,87 +96,62 @@ export default function CreateCompraProducto() {
     }, [])
 
     useEffect(() => {
-        console.log(productCart);
-    }, [productCart])
+        if(catId) {
+            setFilteredProductos(productos.filter(producto => Number(producto.categoria.id) === Number(catId)));
+        } else {
+            setFilteredProductos(productos);
+        }
+    }, [catId, productos])
 
     const addProdToCart = () => {
-        console.log("Current Product IDs in Cart:", prodCartId);
-        console.log("Selected Product ID:", prodId);
-    
         if (prodId) {
-            // Check if the product is already in the cart
             const existingProductIndex = productCart.findIndex(prod => prod.prodId === prodId);
-    
+
             if (existingProductIndex >= 0) {
-                // If it exists, update the quantity
-                setProductCart(prev => {
-                    const updatedCart = [...prev];
-                    updatedCart[existingProductIndex].cantidad += cantidad; // Update the quantity
-                    return updatedCart;
-                });
+                alert("Choose a new Product");
             } else {
-                // If it's a new product, add it to the cart
+                const cantidad = Number(cantidadRef.current?.value);
                 const newProduct: ProdCart = { prodId, cantidad };
                 setProductCart(prev => [...prev, newProduct]);
             }
-    
-            // Update the product ID list if necessary
-            setProdCartId(prev => [...prev, prodId]);
-    
-            // Reset the selected product and quantity for user convenience
             setProdId('');
-            setCantidad(1);
         } else {
             alert("Please select a product");
         }
+    }
 
-/*         console.log(prodCartId);
-        console.log(prodId);
-
-
-        if (prodId && !prodCartId.includes(prodId)) {
-            setProdCartId((prev) => [...prev, prodId]);
-        } else {
-            alert("Add a New product")
-            return
-        }
-
-        const newProduct: ProdCart = {prodId, cantidad};
-        console.log(newProduct);
-
-        setProductCart((prev) => [...prev, newProduct]);
-        console.log(productCart); */
+    const handleDelete = (id) => {
+        setProductCart((prevProdCart) => prevProdCart.filter((product) => product.prodId !== String(id)));
     }
 
     const handleCreate = () => {
-        if (clienteRef.current) {
-            const selectedCategoriaId = clienteRef.current.value;
-            setCompra((prev) => ({
-                ...prev,
-                cliente: { id: String(selectedCategoriaId) },
-            }));
-        }
-        fetch("http://localhost:8080/api/compraproducto/create", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                fecha: compra?.fecha,
-                mediopago: compra?.mediopago,
-                comentario: compra?.comentario,
-                estado: compra?.estado,
-                cliente: {
-                    id: compra.cliente.id,
-                },
-            }),
+        setLoading(true);
+        productCart.forEach(async (productEntry) => {
+            const product = productos.find((prod) => {
+                return Number(prod.id) === Number(productEntry.prodId);
+            });
+            const subtotal = product ? productEntry.cantidad * parseFloat(product.precioventa) : 0;
+            try {
+                const response = await axios.post('http://localhost:8080/compraproducto/create', {
+                    id: {
+                        idcompra: Number(compraId),
+                        idproduct: Number(productEntry.prodId)
+                    },
+                    compra: {
+                        id: Number(compraId)
+                    },
+                    producto: {
+                        id: Number(productEntry.prodId)
+                    },
+                    cantidad: productEntry.cantidad,
+                    total: subtotal,
+                    estado: true
+                })
+            } catch(err) {
+                setError(err.message);
+            }
         })
-            .then((response) => response.json())
-            .then((data) => console.log(data))
-            .then(() => {
-                navigate("/compra/list");
-            })
-            .catch((error) => console.error("Error: ", error));
+        setLoading(false);
     };
 
     if (loading) {
@@ -193,14 +176,11 @@ export default function CreateCompraProducto() {
                                     id="categoriaId"
                                     name="categoriaId"
                                     value={catId}
-                                    onChange={(e) => {
-                                        setCatId(e.target.value);
-                                    }
-                                    }
+                                    onChange={(e) => {setCatId(e.target.value);}}
                                     ref={categoriaRef}
                                     required
                                 >
-                                    <option value={""} disabled>
+                                    <option value={""}>
                                         Seleccione una categoría
                                     </option>
                                     {categorias.map((categoria) => (
@@ -231,7 +211,7 @@ export default function CreateCompraProducto() {
                                     <option value={""} disabled>
                                         Seleccione una Producto
                                     </option>
-                                    {productos.map((producto) => (
+                                    {filteredProdcutos.map((producto) => (
                                         <option key={producto.id} value={producto.id}>
                                             {producto.id}. {producto.nombre}
                                         </option>
@@ -249,8 +229,7 @@ export default function CreateCompraProducto() {
                             type="number"
                             id="cantidad"
                             name="cantidad"
-                            value={cantidad}
-                            onChange={(e) => {setCantidad(Number(e.target.value))}}
+                            ref={cantidadRef}
                             min={1}
                             className="input"
                             required
@@ -267,22 +246,26 @@ export default function CreateCompraProducto() {
                             <tr>
                                 <th>Id</th>
                                 <th>Nombre</th>
+                                <th>Product Price</th>
                                 <th>Cantidad</th>
                                 <th>SubTotal</th>
                             </tr>
                         </thead>
                         <tbody>
                         {productCart.map((productEntry) => {
-                            const product = productos.find((prod) => prod.id === productEntry.prodId);
-                            const cantidad = productEntry.cantidad;
-                            const subtotal = product ? cantidad * parseFloat(product.precioventa) : 0; // Calculate subtotal
+                            const product = productos.find((prod) => {
+                                return Number(prod.id) === Number(productEntry.prodId);
+                            });
+                            const subtotal = product ? productEntry.cantidad * parseFloat(product.precioventa) : 0;
 
                             return product ? (
                                 <tr key={product.id}>
                                     <td>{product.id}</td>
                                     <td>{product.nombre}</td>
-                                    <td>{cantidad}</td>
-                                    <td>{subtotal.toFixed(2)}</td> {/* Format subtotal to 2 decimal places */}
+                                    <td>${product.precioventa}</td>
+                                    <td>{productEntry.cantidad}</td>
+                                    <td>${subtotal.toFixed(2)}</td>
+                                    <td><button className="button is-danger" onClick={() => handleDelete(product.id)}>X</button></td>
                                 </tr>
                             ) : null;
                         })}
