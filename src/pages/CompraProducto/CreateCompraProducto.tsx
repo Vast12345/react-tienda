@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import axios from 'axios';
 
 interface Compra {
@@ -44,16 +44,6 @@ interface CompraProducto {
 
 export default function CreateCompraProducto() {
     const {compraId} = useParams();
-    const [compra, setCompra] = useState<Compra>({
-        id: "",
-        fecha: "",
-        mediopago: "",
-        comentario: "",
-        estado: false,
-        cliente: {
-            id: "",
-        },
-    });
     const [catId, setCatId] = useState<string>();
     const [categorias, setCategorias] = useState<Categoria[]>([]);
     const [prodId, setProdId] = useState('');
@@ -65,8 +55,6 @@ export default function CreateCompraProducto() {
     const categoriaRef = useRef<HTMLSelectElement>(null);
     const cantidadRef = useRef<HTMLInputElement>(null);
     const navigate = useNavigate();
-
-    const [compraProduct, setCompraProduct] = useState<CompraProducto>();
 
     useEffect(() => {
         const fetchCategoria = async () => {
@@ -147,6 +135,7 @@ export default function CreateCompraProducto() {
                     total: subtotal,
                     estado: true
                 })
+                console.log(response);
             } catch(err) {
                 setError(err.message);
             }
