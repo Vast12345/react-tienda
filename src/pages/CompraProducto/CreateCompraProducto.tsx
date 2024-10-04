@@ -25,9 +25,18 @@ interface ProdCart {
     cantidad: number;
 }
 
+interface Compra {
+    id: string;
+    fecha: string;
+    mediopago: string;
+    comentario: string;
+    estado: boolean;
+}
+
 export default function CreateCompraProducto() {
     const { compraId } = useParams();
     const [catId, setCatId] = useState<string>();
+    const [compra, setCompra] = useState<Compra>();
     const [categorias, setCategorias] = useState<Categoria[]>([]);
     const [prodId, setProdId] = useState('');
     const [productos, setProductos] = useState<Producto[]>([]);
@@ -58,14 +67,23 @@ export default function CreateCompraProducto() {
             }
         }
 
-        const fecthData = async () => {
+        const fetchCompra = async () => {
+            try {
+                const response = await axios.get(`http://localhost:8080/api/compra/view/${compraId}`);
+                setCompra(response.data);
+            } catch (err) {
+                setError(err);
+            }
+        }
+
+        const fetchData = async () => {
             setLoading(true);
-            await Promise.all([fetchCategoria(), fetchProducto()]);
+            await Promise.all([fetchCompra(), fetchCategoria(), fetchProducto()]);
             setLoading(false);
         }
 
-        fecthData();
-    }, [])
+        fetchData();
+    }, [compraId])
 
     useEffect(() => {
         if(catId) {
@@ -96,14 +114,13 @@ export default function CreateCompraProducto() {
         setProductCart((prevProdCart) => prevProdCart.filter((product) => product.prodId !== String(id)));
     }
 
-    const handleCreate = () => {
+    const handleCreate = async() => {
         setLoading(true);
         productCart.forEach(async (productEntry) => {
             const product = productos.find((prod) => {
                 return Number(prod.id) === Number(productEntry.prodId);
             });
             const subtotal = product ? productEntry.cantidad * parseFloat(product.precioventa) : 0;
-            console.log("Compra ID: ", Number(compraId), " Product Id: ", Number(productEntry.prodId), " Cantidad: ", productEntry.cantidad, " Total: ", subtotal);
             try {
                 const response = await axios.post('http://localhost:8080/api/compraproducto/create', {
                     id: {
@@ -119,6 +136,17 @@ export default function CreateCompraProducto() {
                 setError(err.message);
             }
         })
+        try {
+            const compraResponse = await axios.put(`http://localhost:8080/api/compra/update/${compraId}`, {
+                fecha: compra?.fecha,
+                mediopago: compra?.mediopago,
+                comentario: compra?.comentario,
+                estado: true
+            })
+            console.log(compraResponse);
+        } catch (err) {
+
+        }
         setLoading(false);
         setTimeout(() => {
             navigate("/compra/list");

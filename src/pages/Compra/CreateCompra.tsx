@@ -72,7 +72,7 @@ export default function CreateCompra() {
         fecha: compra?.fecha,
         mediopago: compra?.mediopago,
         comentario: compra?.comentario,
-        estado: compra?.estado,
+        estado: false,
         cliente: {
           id: compra.cliente.id,
         },
